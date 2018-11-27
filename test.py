@@ -39,7 +39,7 @@ def reduce_dimension(data, embeddings):
         # Dimentionality reduction to 20
         out.append(tw_vect @ embeddings)
         
-    return out
+    return np.array(out)
 
 
 # Loading data
