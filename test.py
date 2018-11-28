@@ -12,7 +12,7 @@ def import_data(filename, vocab):
     """
     Imports the twitts as lists of worlds in a list
     """
-    with open(os.path.join(DATA_PATH, 'neg_train.txt'), 'rt') as f:
+    with open(os.path.join(DATA_PATH, filename), 'rt') as f:
         out = []
         for line in f:
             temp = []
