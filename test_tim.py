@@ -7,6 +7,7 @@ import pickle
 from scipy.sparse import *
 import sklearn
 from sklearn.linear_model import LogisticRegression
+import pandas as pd
 
 DATA_PATH = "twitter-datasets/"
 
@@ -14,9 +15,10 @@ def import_data(filename, vocab):
     """
     Imports the twitts as lists of worlds in a list
     """
-    with open(os.path.join(DATA_PATH, filename), 'rt') as f:
+    with open(os.path.join(DATA_PATH, filename), 'rt', encoding="utf8") as f:
         out = []
         for line in f:
+            # print(line)
             temp = []
             for word in line.split():
                 try:
@@ -36,11 +38,13 @@ def reduce_dimension(data, embeddings):
     for twitt in data:
         tw_vect = np.zeros(embeddings.shape[0])
         # Transforms twitt in a 21k dimentional vector
-        n=0
-        for word in twitt:
-            tw_vect[word] += 1
-            n += 1
-        tw_vect = tw_vect / max(1,n) 
+        # n=0
+        # print(twitt)
+        tw_vect[twitt] = 1/max(1, len(twitt))
+        # for word in twitt:
+        #     tw_vect[word] += 1
+        #     n += 1
+        # tw_vect = tw_vect / max(1, n) 
         # Dimentionality reduction to 20
         out.append(tw_vect @ embeddings)
         
@@ -55,8 +59,9 @@ with open(os.path.join(DATA_PATH, 'vocab.pkl'), 'rb') as f:
     vocab = pickle.load(f)
 
 # Loading the train data
-pos_train = import_data('pos_train.txt', vocab)
 neg_train = import_data('neg_train.txt', vocab)
+pos_train = import_data('pos_train.txt', vocab)
+
 test = import_data('test_data.txt', vocab)      
 embed = np.load('embeddings.npy')
 
@@ -72,12 +77,12 @@ except:
     test_red = reduce_dimension(test, embed)
     np.save('pos_train_red', pos_train_red)
     np.save('neg_train_red', neg_train_red)
-    np.save('test_red', neg_train_red)
-
+    # np.save('test_red', neg_train_red)
+print('reduction done')
 train_red = np.concatenate((pos_train_red, neg_train_red))
-
-y=np.zeros(200000)
-y[:100000]=1
+# len(train_red)
+y=np.zeros(len(train_red))
+y[:int(len(train_red)/2)]=1
 y = y.reshape(-1,1)
 
 
@@ -87,15 +92,15 @@ np.random.shuffle(s)
 X = train_red[s]
 y = y[s]
 p=0.8
-n=int(len(y)*p)
 
+n=int(len(y)*p)
 X_train = X[:n,:]
 y_train = y[:n,:]
 X_test = X[n:,:]
 y_test = y[n:,:]
 
 logistic = LogisticRegression(solver='liblinear')
-logistic.fit(X_train, y_train)
+logistic.fit(X_train, y_train, )
 
 predictions = logistic.predict(X_test)
 
@@ -113,6 +118,10 @@ print('Linear; accuracy: {}, F1: {}'.format(accuracy, F1))
 
 # F1 = sklearn.metrics.f1_score(y_test, predictions)
 # print('accuracy: {}, F1: {}'.format(accuracy, F1))
+
+
+
+
 logistic.fit(X, y)
 predictions = logistic.predict(test_red)
 predictions = 2 * predictions -1
