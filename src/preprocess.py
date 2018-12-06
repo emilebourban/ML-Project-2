@@ -35,7 +35,7 @@ def load_dicts(DICT_PATH):
 
 def clean_typos(filename, in_path, out_path, dict_list):
     with open(os.path.join(in_path, filename), mode='rt', encoding='utf-8') as rf:
-        with open(os.path.join(out_path, 'cl_'+filename), mode='wt', encoding='utf-8') as wf:
+        with open(os.path.join(out_path, filename), mode='wt', encoding='utf-8') as wf:
             for line in rf:
                     twitt = line.rstrip('\n').split(' ')
                     for i, word in enumerate(twitt):
@@ -51,15 +51,16 @@ def clean_typos(filename, in_path, out_path, dict_list):
 def main():
 
     DICT_PATH = "../dict"
-    TWITT_PATH = "../twitter-datasets"
+    OR_TWITT_PATH = "../data/twitter-datasets-original"
+    NEW_TWITT_PATH = "../data/twitter-datasets"
     DATA_PATH = "../data"
     
     dict1, dict2, dict3 = load_dicts(DICT_PATH)
     
-    files = [i for i in os.listdir(TWITT_PATH) if not i.startswith('vocab') and i.endswith('.txt')]
+    files = [i for i in os.listdir(OR_TWITT_PATH) if i.endswith('.txt')]
     
     for file in files:
-        clean_typos( file, TWITT_PATH, os.path.join(TWITT_PATH, "clean"), [dict1, dict2, dict3])
+        clean_typos( file, OR_TWITT_PATH, NEW_TWITT_PATH, [dict1, dict2, dict3])
                         
 if __name__ == '__main__':
     main()

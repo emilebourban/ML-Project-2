@@ -4,7 +4,7 @@ import pickle
 
 def main():
     vocab = dict()
-    with open('../twitter-datasets/vocab_cut.txt') as f:
+    with open('../data/vocab_cut.txt') as f:
         for idx, line in enumerate(f):
             vocab[line.strip()] = idx
 

@@ -11,7 +11,7 @@ def main():
 
     data, row, col = [], [], []
     counter = 1
-    for fn in ['../twitter-datasets/pos_train.txt', '../twitter-datasets/neg_train.txt']:
+    for fn in ['../data/twitter-datasets/train_pos.txt', '../data/twitter-datasets/train_neg.txt']:
         with open(fn) as f:
             for line in f:
                 tokens = [vocab.get(t, -1) for t in line.strip().split()]
