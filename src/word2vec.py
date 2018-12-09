@@ -32,14 +32,16 @@ def main():
             vocab = pickle.load(f)
             vocab_size = len(vocab)
     
-    train_twitts = imp.import_text('train_pos.txt', vocab)
-    train_twitts.extend(imp.import_text('train_neg.txt', vocab))
+    train_twitts = imp.import_text('cl_train_pos.txt')
+    train_twitts.extend(imp.import_text('cl_train_neg.txt'))
     
+    # Creates trains and saves the model
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO) 
     model = word2vec.Word2Vec(train_twitts, size=N_DIM)
+    model.save("../data/word2vec{}.model".format(N_DIM))
     
     twitt_data = np.zeros((N_TWITT, N_DIM))
-    train_files = ['train_pos.txt', 'train_neg.txt']
+    train_files = ['cl_train_pos.txt', 'cl_train_neg.txt']
     for i, file in enumerate(train_files):
         
         with open(os.path.join(DATA_PATH, "twitter-datasets", file), 'rt') as f:
