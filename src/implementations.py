@@ -6,14 +6,15 @@ import os
 
 def import_data(filename, vocab):
     """
-    Imports the twitts as lists of worlds in a list
+    Imports the twitts as lists of dimensions in a list, only imports the words present in vocab
     """
-    with open(os.path.join("data/twitter-datasets/", filename), 'rt') as f:
+    with open(os.path.join("../data/twitter-datasets/", filename), 'rt') as f:
         out = []
         for line in f:
             temp = []
             for word in line.split():
                 try:
+                    # Appends the dimention the word is present in
                     temp.append(vocab[word])
                 except KeyError:
                     pass
@@ -23,9 +24,24 @@ def import_data(filename, vocab):
     return out
 
 
+def import_text(filename):
+    """
+    Imports the twitts as lists of worlds in a list, only imports the words present in vocab
+    """
+    with open(os.path.join("../data/twitter-datasets/", filename), 'rt') as f:
+        out = []
+        for line in f:
+            temp = []
+            for word in line.split():
+                temp.append(word)
+            out.append(temp)
+    
+    return out
+
+
 def reduce_dimension(data, embeddings):
     """
-    Reduce the dimentionality of the worlds from 21k to 20D
+    Reduce the dimentionality of the worlds from 21k to 20
     """
     out = [] 
     for twitt in data:
