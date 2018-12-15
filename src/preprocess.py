@@ -2,6 +2,7 @@
 
 import os
 import re
+from nltk.stem.porter import *
 
 def load_dicts(DICT_PATH):
     """
@@ -35,27 +36,36 @@ def load_dicts(DICT_PATH):
     return dict_typo
 
 
-def clean_tweets(filename, in_path, out_path, dict_typo):
+def clean_tweets(filename, in_path, out_path, dict_typo, only_words=False, stemming=False, min_len=None):
     """
     
     """
-    # Removes all the common words that don't carry sense
-    del_list = ['<user>', '<url>', 'to', 'the', 'my', 'it', 'and', 'you', 'is', 'in', 'for']
     with open(os.path.join(in_path, filename), mode='rt', encoding='utf-8') as rf:
         with open(os.path.join(out_path, 'cl_'+filename), mode='wt', encoding='utf-8') as wf:            
             for line in rf:
-            
-                tweet = re.sub(r'n\'t$', ' not', line)          # Converts negation contraction to verb + not
-                tweet = re.sub(r'\d+(x)\d+|^\d+(x)\d+ | \d+(x)\d+$', '', tweet)        # Removes picture frames
-                tweet = re.sub(r'^#| #', '', tweet)        # Removes hashtags
-#                tweet = re.sub(r'[^a-z ]', '', tweet)       # Only keeps words
-                tweet = tweet.strip().split()
-                tweet = [w for w in tweet if (w not in del_list)]
-                for i, word in enumerate(tweet):                    
-                    if word in dict_typo.keys():
-                        tweet[i] = dict_typo[word] 
+                
+                tweet = re.sub(r'<([^>]+)>', ' ', line.strip().lower())         # Removes usr and url
+                tweet = re.sub(r'^#| #', ' ', tweet)                            # Removes hashtags
+                tweet = re.sub(r'\d+(x)\d+', '<img>', tweet)                    # Removes picture frames            
+                tweet = re.sub(r'n\'t$', ' not', tweet)                         # Converts negation contraction to verb + not*  
+                
+                if only_words:
+                    tweet = re.sub(r'[^a-z]', ' ', tweet)                       # Only keeps words
                     
-                wf.write(' '.join(tweet)+'\n')
+                tweet = tweet.strip().split()
+                
+                if stemming:
+                    stemmer = PorterStemmer()
+                    tweet = [stemmer.stem(word) for word in tweet]              # stemming
+                
+                for i, word in enumerate(tweet):        
+                    if word in dict_typo.keys() and word != 'not':
+                        tweet[i] = dict_typo[word]                     
+                
+                if min_len is not None:
+                    wf.write(' '.join([word for word in tweet if len(word) >= min_len])+'\n')
+                else:
+                    wf.write(' '.join(tweet)+'\n')
 
 def main():
 
@@ -63,18 +73,18 @@ def main():
     OR_TWITT_PATH = "../data/twitter-datasets-original"
     NEW_TWITT_PATH = "../data/twitter-datasets"
     DATA_PATH = "../data"
-    FULL = False
+    FULL = False 
     
     dict_typo = load_dicts(DICT_PATH)
     
     if FULL:
-        files = [i for i in os.listdir(OR_TWITT_PATH) if i.endswith('full.txt')]        
+        files = [i for i in os.listdir(OR_TWITT_PATH) if i.endswith('.txt')]        
     else:
         files = [i for i in os.listdir(OR_TWITT_PATH) if not i.endswith('full.txt')]
     
     for file in files:
         print("Processing {} ...".format(file))
-        clean_tweets(file, OR_TWITT_PATH, NEW_TWITT_PATH, dict_typo)
+        clean_tweets(file, OR_TWITT_PATH, NEW_TWITT_PATH, dict_typo, only_words=True, stemming=False, min_len=3)
                         
 if __name__ == '__main__':
     main()
