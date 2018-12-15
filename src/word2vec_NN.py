@@ -19,6 +19,33 @@ from keras.utils import np_utils
 from keras.datasets import mnist
 from keras.models import load_model
 
+def create_model_NN(sentence_dim, y_size, nb_filter = 128, x_size = 3):
+    model_NN = Sequential()    
+    y_size = word_vect_dim
+    model_NN.add(Convolution2D(nb_filter, (x_size, y_size), activation='relu', input_shape=(sentence_dim, word_vect_dim,1)))
+    print( model_NN.output_shape)
+    # model_NN.add(Convolution2D(32, 3, 28, activation='relu'))
+    # i=0
+    # print('test{}'.format(i))
+    # i +=1
+    model_NN.add(MaxPooling2D(pool_size=(sentence_dim+1-x_size,1)))
+    # print( model_NN.output_shape)
+    model_NN.add(Dropout(0.25))
+    # print('test{}'.format(i)) # 1
+    # i +=1
+    model_NN.add(Flatten())
+    # print( model_NN.output_shape) # 2
+
+    model_NN.add(Dense(128, activation='relu'))
+    model_NN.add(Dropout(0.5))
+    model_NN.add(Dense(output_size, activation='softmax'))
+
+    # print('test{}'.format(i)) # 3
+    # i +=1
+    model_NN.compile(loss= 'binary_crossentropy',# 'categorical_crossentropy',
+                optimizer='adam',
+                metrics=['accuracy'])
+    return model_NN
 
 def split_test_train(X, y, train_fraction=0.8, seed=1):
     """
@@ -43,7 +70,7 @@ def split_test_train(X, y, train_fraction=0.8, seed=1):
     
 # def main():
 DATA_PATH = "../data"
-word_vect_dim = 100
+word_vect_dim = 200
 # N_TWITT = 200000
 
 with open(os.path.join(DATA_PATH, "vocab.pkl"), 'rb') as f:
@@ -67,17 +94,19 @@ else:
 	model.save("../data/word2vec{}.model".format(word_vect_dim))
 
 N_TWITT = N_TWITT-10000
-sentence_dim = 48
+sentence_dim = 24
 twitt_data = np.zeros((N_POS + N_NEG, sentence_dim, word_vect_dim))
+full_ = False
 train_files = ['cl_train_pos'+('_full' if full_ else '')+'.txt', 'cl_train_neg'+('_full' if full_ else '')+'.txt']
-
+a=[]
 for i, file in enumerate(train_files):
     
     with open(os.path.join(DATA_PATH, "twitter-datasets", file), 'rt', encoding="utf8") as f:
 
         for l, line in enumerate(f):
             twitt = np.zeros([sentence_dim, word_vect_dim])
-            # n= len(line.strip().split())
+            n= len(line.strip().split())
+            a += [n]
             # print(n)
             j=0
             for word in line.strip().split():
@@ -88,10 +117,11 @@ for i, file in enumerate(train_files):
                     continue
             # twitt
             twitt_data[i*N_POS + l, : , :] = twitt
+print('Median: {}'.format(np.median(a)))
 print('loading is over')          
 smileys = np.concatenate((np.ones(N_TWITT//2), -np.ones(N_TWITT//2)), axis=None)
 smileys[smileys<0]=0
-twitt_tr, twitt_te, smileys_tr, smileys_te = split_test_train(twitt_data, smileys)
+twitt_tr, twitt_te, smileys_tr, smileys_te = split_test_train(twitt_data, smileys, train_fraction=0.99)
 
 
 output_size =2
@@ -104,51 +134,74 @@ X_test = twitt_te.reshape(twitt_te.shape[0], sentence_dim, word_vect_dim, 1)
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
 
-print('Creat model')
+print('Create model')
 #model
-model_NN = Sequential()
+# model_NN = Sequential()
 
-nb_filter = 32
+nb_filter = 128
 x_size = 5
 y_size = word_vect_dim
-model_NN.add(Convolution2D(nb_filter, (x_size, y_size), activation='relu', input_shape=(sentence_dim, word_vect_dim,1)))
-print( model_NN.output_shape)
-# model_NN.add(Convolution2D(32, 3, 28, activation='relu'))
-i=0
-print('test{}'.format(i))
-i +=1
-model_NN.add(MaxPooling2D(pool_size=(44,1)))
-print( model_NN.output_shape)
-model_NN.add(Dropout(0.25))
-print('test{}'.format(i)) # 1
-i +=1
-model_NN.add(Flatten())
-print( model_NN.output_shape) # 2
+# model_NN.add(Convolution2D(nb_filter, (x_size, y_size), activation='relu', input_shape=(sentence_dim, word_vect_dim,1)))
+# print( model_NN.output_shape)
+# # model_NN.add(Convolution2D(32, 3, 28, activation='relu'))
+# i=0
+# print('test{}'.format(i))
+# i +=1
+# model_NN.add(MaxPooling2D(pool_size=(sentence_dim+1-x_size,1)))
+# print( model_NN.output_shape)
+# model_NN.add(Dropout(0.25))
+# print('test{}'.format(i)) # 1
+# i +=1
+# model_NN.add(Flatten())
+# print( model_NN.output_shape) # 2
 
-model_NN.add(Dense(128, activation='relu'))
-model_NN.add(Dropout(0.5))
-model_NN.add(Dense(output_size, activation='softmax'))
+# model_NN.add(Dense(128, activation='relu'))
+# model_NN.add(Dropout(0.5))
+# model_NN.add(Dense(output_size, activation='softmax'))
 
-print('test{}'.format(i)) # 3
-i +=1
-model_NN.compile(loss= 'binary_crossentropy',# 'categorical_crossentropy',
-            optimizer='adam',
-            metrics=['accuracy'])
-print('test{}'.format(i)) # 4
-i +=1
+# print('test{}'.format(i)) # 3
+# i +=1
+# model_NN.compile(loss= 'binary_crossentropy',# 'categorical_crossentropy',
+#             optimizer='adam',
+#             metrics=['accuracy'])
+# print('test{}'.format(i)) # 4
+# i +=1
 # Train model on train data
-model_NN.fit(X_train, Y_train, 
-        batch_size=64, nb_epoch=10, verbose=1)
+# model_NN.fit(X_train, Y_train, 
+#         batch_size=64, nb_epoch=5, verbose=1)
 
-# Evaluate model on test data
-score = model_NN.evaluate(X_test, Y_test, verbose=0)
+# # Evaluate model on test data
+# score = model_NN.evaluate(X_test, Y_test, verbose=0)
+max_acc=0
+m=5
+for i in range(m):
+    print('I: ' + str(i))
+    model_NN = create_model_NN(sentence_dim, y_size, nb_filter = nb_filter, x_size = 3)
+    model_NN.fit(X_train, Y_train, 
+            batch_size=64, nb_epoch=20, verbose=1)
 
-print(score)
+    # Evaluate model on test data
+    score = model_NN.evaluate(X_test, Y_test, verbose=0)
 
-# model_NN.save('my_model.h5')
-# model_NN2 = load_model('my_model.h5')
+    print(score)
+    # if score[1]>max_acc:
+        # max_acc = score[1]
+    model_NN.save('my_model_'+str(nb_filter)+'_'+str(i)+ '.h5')
+    # else:
+    #     break
 
+predictions = []
+for i in range(m):
+    model_NN = load_model('my_model_'+str(nb_filter)+'_'+str(i)+ '.h5')
+    predictions += [model_NN.predict(X_test).argmax(axis=1)]
 
+predictions_array = np.array(predictions)
+predictions = np.median(predictions_array, axis=0)
+accuracy = np.mean(predictions == smileys_te)
+print('Test Accuracy: {}'.format(accuracy))
+# model_NN2 = load_model('my_model_3_32.h5')
+
+# model_NN.save('my_model_3_64_'+str(int(score[1]*100))+'.h5')
 ########################################################
 test_file = 'cl_test_data.txt'
 # for i, file in enumerate(test_files):
@@ -173,9 +226,15 @@ with open(os.path.join(DATA_PATH, "twitter-datasets", test_file), 'rt', encoding
             twitt_data_test[l, : , :] = twitt
 
 
+predictions = []
 
 test_red_2 = twitt_data_test.reshape(twitt_data_test.shape[0], sentence_dim, word_vect_dim, 1)
-predictions = model_NN.predict(test_red_2).argmax(axis=1)
+for i in range(m):
+    model_NN = load_model('my_model_'+str(nb_filter)+'_'+str(i)+ '.h5')
+    predictions += [model_NN.predict(test_red_2).argmax(axis=1)]
+
+predictions_array = np.array(predictions)
+predictions = np.median(predictions_array, axis=0)
 
 # logistic = LogisticRegression(solver='liblinear')#, C=1/4)
 # logistic.fit(twitt_tr, smileys_tr)
@@ -219,7 +278,7 @@ df.index +=1
 
 
 df.columns = ['Prediction']
-df.to_csv('predi.csv')
+df.to_csv('predi_median.csv')
 
 
 
@@ -227,15 +286,4 @@ df.to_csv('predi.csv')
             
 # if __name__ == '__main__':
 #     main()
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             
