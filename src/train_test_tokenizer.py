@@ -150,14 +150,17 @@ def load_embedding_matrix(filepath, EMB_DIM, word_index):
         print("Loading embeddings...")
         for i, line in enumerate(f):
             key_vec = line.split()
-            embed_dict.update({key_vec[0]:np.array(key_vec[1])})
+            embed_dict.update({key_vec[0]:np.array(key_vec[1:])})
             if i % 1e5 == 0:
                 print("Loaded {:1.1E} words".format(i))
             
         print("Creating embedding matrix...")
         for word in word_index.keys():
             row = word_index[word]-1
-            embbeding_mat[row, :] = word_index[word]
+            try:
+                embbeding_mat[row, :] = embed_dict[word]
+            except KeyError:
+                embbeding_mat[row, :] = np.zeros(EMB_DIM)
         
     return embbeding_mat
 
@@ -167,10 +170,10 @@ def main():
     DATA_PATH = "../data"
     TWEET_PATH = os.path.join(DATA_PATH, "twitter-datasets")
     FULL = True    
-    EMB_DIM = 25
-    NGRAM_RANGE = 2
+    EMB_DIM = 200
+    NGRAM_RANGE = None
     MAXLEN = 30
-
+    
     
     train_tweets, test_tweets, labels = import_tweets(TWEET_PATH, FULL)
     train_tweets, test_tweets, word_index = tokenize(train_tweets, test_tweets)
@@ -183,16 +186,16 @@ def main():
         test_tweets_ngram = sequence.pad_sequences(test_tweets_ngram, maxlen=(MAXLEN*NGRAM_RANGE))
         
         cPickle.dump([train_tweets_ngram, labels, test_tweets_ngram, len(word_index.keys())], 
-                      open(os.path.join(DATA_PATH, 'train_test_{}_gram').format(NGRAM_RANGE), 'wb'))
+                      open(os.path.join(DATA_PATH, 'train_test_{}_gram.pkl').format(NGRAM_RANGE), 'wb'))
         
     else:
         
         train_tweets= sequence.pad_sequences(train_tweets, maxlen=MAXLEN)
         test_tweets = sequence.pad_sequences(test_tweets, maxlen=MAXLEN)
         embedding_matrix = load_embedding_matrix(DATA_PATH, EMB_DIM, word_index)
-
+    
         cPickle.dump([train_tweets, labels, test_tweets, len(word_index.keys()), embedding_matrix],
-                      open(os.path.join(DATA_PATH, 'train_test_{}embedding'.format(EMB_DIM)), 'wb'))
+                      open(os.path.join(DATA_PATH, 'train_test_{}embedding.pkl'.format(EMB_DIM)), 'wb'))
 
 if __name__ == '__main__':
     main()

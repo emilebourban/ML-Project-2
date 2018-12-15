@@ -73,7 +73,7 @@ def main():
     OR_TWITT_PATH = "../data/twitter-datasets-original"
     NEW_TWITT_PATH = "../data/twitter-datasets"
     DATA_PATH = "../data"
-    FULL = False 
+    FULL = True 
     
     dict_typo = load_dicts(DICT_PATH)
     
