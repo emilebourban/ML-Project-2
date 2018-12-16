@@ -16,11 +16,11 @@ def main():
     DATA_PATH = "data/"
     EMB_DIM = 200    
     
-    print("Loading pickled data, embedings: {}...".format(EMB_DIM))
+    print("Loading pickled data ...")
     train_tweets, labels, test_tweets, nb_tokens, emb_matrix = \
         cPickle.load(open(os.path.join(DATA_PATH, "train_test_{}embedding.pkl".format(EMB_DIM)), mode='rb'))
         
-    print("Embedding...")      
+    print("Embedding ...")      
     train_data = np.zeros((train_tweets.shape[0], EMB_DIM))    
     for i, tweet in enumerate(train_tweets):
         
@@ -38,7 +38,7 @@ def main():
     
     print("Logistic regresion fitting...")
     logistic = LogisticRegression(solver='liblinear')
-    logistic.fit(train_data[:200000], labels[:200000])
+    logistic.fit(train_data[:109000], labels[:109000])
     
     print("Accuracy is: {}".format(np.mean(cross_val_score(logistic, train_data[-10000:], labels[-10000:], cv=5, scoring='accuracy'))))
 
