@@ -36,26 +36,33 @@ def load_dicts(DICT_PATH):
     return dict_typo
 
 
-def clean_tweets(filename, in_path, out_path, dict_typo, only_words=False, stemming=False, min_len=None):
+def clean_tweets(filename, in_path, out_path, dict_typo, only_words=False, stemmer=None, min_len=None):
     """
     
     """
+    print("Cleaning with: only words={}, stemmer={}, minimal length={}".format(only_words, stemmer!=None, min_len))    
     with open(os.path.join(in_path, filename), mode='rt', encoding='utf-8') as rf:
-        with open(os.path.join(out_path, 'cl_'+filename), mode='wt', encoding='utf-8') as wf:            
+        with open(os.path.join(out_path, 'cl_'+filename), mode='wt', encoding='utf-8') as wf:
+            
             for line in rf:
-                
-                tweet = re.sub(r'<([^>]+)>', ' ', line.strip().lower())         # Removes usr and url
+                if 'test' in filename:
+                    ID = line.strip().split(',')[0]+','
+                    tweet = ' '.join(line.strip().split()[1:])
+                else:
+                    ID = ''
+                    tweet =  line.strip()
+                    
+                tweet = re.sub(r'<([^>]+)>', ' ',tweet)         # Removes usr and url
                 tweet = re.sub(r'^#| #', ' ', tweet)                            # Removes hashtags
                 tweet = re.sub(r'\d+(x)\d+', '<img>', tweet)                    # Removes picture frames            
-                tweet = re.sub(r'n\'t$', ' not', tweet)                         # Converts negation contraction to verb + not*  
+                tweet = re.sub(r'n\'t$|n\'t ', ' not', tweet)                   # Converts negation contraction to verb + not
                 
                 if only_words:
                     tweet = re.sub(r'[^a-z]', ' ', tweet)                       # Only keeps words
                     
                 tweet = tweet.strip().split()
                 
-                if stemming:
-                    stemmer = PorterStemmer()
+                if stemmer != None:
                     tweet = [stemmer.stem(word) for word in tweet]              # stemming
                 
                 for i, word in enumerate(tweet):        
@@ -63,9 +70,10 @@ def clean_tweets(filename, in_path, out_path, dict_typo, only_words=False, stemm
                         tweet[i] = dict_typo[word]                     
                 
                 if min_len is not None:
-                    wf.write(' '.join([word for word in tweet if len(word) >= min_len])+'\n')
+                    wf.write(ID+' '.join([word for word in tweet if len(word) >= min_len])+'\n')
                 else:
-                    wf.write(' '.join(tweet)+'\n')
+                    wf.write(ID+' '.join(tweet)+'\n')
+                    
 
 def main():
 
@@ -82,9 +90,11 @@ def main():
     else:
         files = [i for i in os.listdir(OR_TWITT_PATH) if not i.endswith('full.txt')]
     
+    stemmer = PorterStemmer()
+    
     for file in files:
         print("Processing {} ...".format(file))
-        clean_tweets(file, OR_TWITT_PATH, NEW_TWITT_PATH, dict_typo, only_words=True, stemming=False, min_len=3)
+        clean_tweets(file, OR_TWITT_PATH, NEW_TWITT_PATH, dict_typo, only_words=False, stemmer=None, min_len=None)
                         
 if __name__ == '__main__':
     main()

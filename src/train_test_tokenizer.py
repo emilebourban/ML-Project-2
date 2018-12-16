@@ -15,7 +15,7 @@ def import_tweets(filepath, FULL=False):
         train_files = [file for file in os.listdir(filepath) if 'full' in file]
         train_size = 2500000
     else:
-        train_files = [file for file in os.listdir(filepath) if 'full' not in file]        
+        train_files = [file for file in os.listdir(filepath) if 'full' not in file and 'test' not in file]        
         train_size = 200000
         
     test_file = [file for file in os.listdir(filepath) if 'test' in file]
@@ -32,8 +32,8 @@ def import_tweets(filepath, FULL=False):
                 train_tweets.append(line.strip())
                 
     with open(os.path.join(filepath, test_file[0]), mode='rt', encoding='utf-8') as f:
-        for line in f:
-            test_tweets.append(line.strip())
+        for line in f:            
+            test_tweets.append(' '.join(line.strip().split(',')[1:]))
             
     return train_tweets, test_tweets, labels
     
@@ -45,7 +45,7 @@ def tokenize(train_tweets, test_tweets, max_word=None):
     if max_word == None:
         tokenizer = Tokenizer(filters='')
     else:
-        tokenizer = Tokenizer(nb_words=max_word, filters='')
+        tokenizer = Tokenizer(num_words=max_word, filters='')
     
     print("Fitting tokenizer...")
     tokenizer.fit_on_texts(train_tweets)
@@ -169,14 +169,14 @@ def main():
     
     DATA_PATH = "../data"
     TWEET_PATH = os.path.join(DATA_PATH, "twitter-datasets")
-    FULL = True    
+    FULL = False    
     EMB_DIM = 200
     NGRAM_RANGE = None
     MAXLEN = 30
     
     
     train_tweets, test_tweets, labels = import_tweets(TWEET_PATH, FULL)
-    train_tweets, test_tweets, word_index = tokenize(train_tweets, test_tweets)
+    train_tweets, test_tweets, word_index = tokenize(train_tweets, test_tweets, max_word=20000)
     
     
     if NGRAM_RANGE:
