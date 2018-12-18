@@ -170,6 +170,109 @@ def model_5(EMB_DIMS, filepath):
     # Saves the model and predictions
     save_model_predict(model, train, test, "model5")
     
+def model_6(EMB_DIMS, filepath):    
+    
+    [train_tweets, labels, test_tweets, nb_tokens] = \
+            cPickle.load(open(os.path.join(filepath, "train_test_ngram.pkl"), "rb"))    
+    
+    model = Sequential()
+    model.add(Embedding(nb_tokens+1, 200, input_length=train_tweets.shape[1]))
+    model.add(GlobalAveragePooling1D())
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model.summary())   
+        
+    model.fit(train_tweets, labels, validation_split=0.01, nb_epoch=2, batch_size=1024, verbose=1, shuffle=True)
+    train = model.predict_proba(train_tweets, batch_size=1024)
+    test = model.predict_proba(test_tweets)
+    
+    # Saves the model and predictions
+    save_model_predict(model, train, test, "model6")
+    
+def model_7(EMB_DIMS, filepath):
+    [train_tweets, labels, test_tweets, nb_tokens] = \
+            cPickle.load(open(os.path.join(filepath, "train_test_ngram.pkl"), "rb"))
+    model = Sequential()
+    model.add(Embedding(nb_tokens+1, EMB_DIMS, input_length=train_tweets.shape[1]))
+    model.add(Convolution1D(nb_filter=32, filter_length=3, border_mode='same', activation='relu'))
+    model.add(MaxPooling1D(pool_length=2))
+    model.add(Flatten())
+    model.add(Dense(250, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model.summary())
+        
+    model.fit(train_tweets, labels, validation_split=0.01, nb_epoch=2, batch_size=128, verbose=1, shuffle=True)
+
+    train = model.predict_proba(train_tweets, batch_size=128)
+    test = model.predict_proba(test_tweets)
+    
+    # Saves the model and predictions
+    save_model_predict(model, train, test, "model7")
+    
+def model_8(EMB_DIMS, filepath):
+    [train_tweets, labels, test_tweets, nb_tokens] = \
+            cPickle.load(open(os.path.join(filepath, "train_test_ngram.pkl"), "rb"))
+    
+    model = Sequential()
+    model.add(Embedding(nb_tokens+1, EMB_DIMS, input_length=train_tweets.shape[1]))
+    model.add(Convolution1D(nb_filter=32, filter_length=3, border_mode='same', activation='relu'))
+    model.add(MaxPooling1D(pool_length=2))
+    model.add(Flatten())
+    model.add(Dense(250, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model.summary())
+        
+    model.fit(train_tweets, labels, validation_split=0.01, nb_epoch=2, batch_size=128, verbose=1, shuffle=True)
+
+    train = model.predict_proba(train_tweets, batch_size=128)
+    test = model.predict_proba(test_tweets)
+    
+    # Saves the model and predictions
+    save_model_predict(model, train, test, "model8")
+
+def model_9(EMB_DIMS, filepath):
+    [train_tweets, labels, test_tweets, nb_tokens] = \
+            cPickle.load(open(os.path.join(filepath, "train_test_ngram.pkl"), "rb"))
+    
+    model = Sequential()
+    model.add(Embedding(nb_tokens+1, EMB_DIMS, input_length=train_tweets.shape[1]))
+    model.add(Convolution1D(nb_filter=32, filter_length=3, border_mode='same', activation='relu'))
+    model.add(MaxPooling1D(pool_size=2))
+    model.add(LSTM(100))
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model.summary())
+        
+    model.fit(train_tweets, labels, validation_split=0.01, nb_epoch=2, batch_size=128, verbose=1, shuffle=True)
+
+    train = model.predict_proba(train_tweets, batch_size=128)
+    test = model.predict_proba(test_tweets)
+    
+    # Saves the model and predictions
+    save_model_predict(model, train, test, "model9")
+
+def model_10(EMB_DIMS, filepath):
+    [train_tweets, labels, test_tweets, nb_tokens] = \
+            cPickle.load(open(os.path.join(filepath, "train_test_ngram.pkl"), "rb"))
+    
+    model = Sequential()
+    model.add(Embedding(nb_tokens+1, EMB_DIMS, input_length=train_tweets.shape[1]))
+    model.add(LSTM(100, dropout_W=0.2, dropout_U=0.2))
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model.summary())
+        
+    model.fit(train_tweets, labels, validation_split=0.01, nb_epoch=2, batch_size=128, verbose=1, shuffle=True)
+
+    train = model.predict_proba(train_tweets, batch_size=128)
+    test = model.predict_proba(test_tweets)
+    
+    # Saves the model and predictions
+    save_model_predict(model, train, test, "model10")
+
+
     
 def boost_prediction():
     """
@@ -177,7 +280,8 @@ def boost_prediction():
     """
     train_files = [file for file in os.listdir("results/train/")]
     test_files = [file for file in os.listdir("results/test/")]
-    
+    print(train_files)
+    print(test_files)
     train = []
     for file in train_files:
         train.append(cPickle.load(open("results/train/{}".format(file), "rb")))
@@ -201,12 +305,17 @@ def boost_prediction():
 def main():
     DATA_PATH = "data/"
     
-    model_1(200, DATA_PATH)
+#    model_1(200, DATA_PATH)
 #    model_2(200, DATA_PATH)
 #    model_3(200, DATA_PATH)
 #    model_4(200, DATA_PATH)
 #    model_5(200, DATA_PATH)
-    
+#    model_6(200, DATA_PATH)
+#    model_7(200, DATA_PATH)
+#    model_8(200, DATA_PATH)
+#    model_9(200, DATA_PATH)
+    model_10(200, DATA_PATH)
+
     boost_prediction()
     
 
