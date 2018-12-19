@@ -15,7 +15,7 @@ def import_tweets(filepath, FULL=False):
         train_files = [file for file in os.listdir(filepath) if 'full' in file]
         train_size = 2500000
     else:
-        train_files = [file for file in os.listdir(filepath) if 'full' not in file and 'test' not in file]        
+        train_files = [file for file in os.listdir(filepath) if 'full' not in file]        
         train_size = 200000
         
     test_file = [file for file in os.listdir(filepath) if 'test' in file]
@@ -32,7 +32,7 @@ def import_tweets(filepath, FULL=False):
                 train_tweets.append(line.strip())
                 
     with open(os.path.join(filepath, test_file[0]), mode='rt', encoding='utf-8') as f:
-        for line in f:            
+        for line in f:
             test_tweets.append(' '.join(line.strip().split(',')[1:]))
             
     return train_tweets, test_tweets, labels
@@ -75,43 +75,40 @@ def create_ngram_dic(tweets, max_token, ngram_range=2, min_occ=0, max_occ=None, 
     ngram_list =[]
     for tweet in tweets:
         for i in range(2, ngram_range + 1):
-            ngram_list.append(ngrams(tweet, i))
-    
+            for n in ngrams(tweet, i):
+                ngram_list.append(n)
+            
     counter = Counter(ngram_list)
     
     new_ngram_list = []
     if n_first:
         new_ngram_list = [val[0] for val in counter.most_common(n_first)]
     elif max_occ:
-        for key, val in counter:
-            if val >= min_occ and val <= max_occ:
+        new_ngram_list = [val[0] for val in counter.items() if val[1]>=min_occ and val[1]<=max_occ]
+    else:
+        new_ngram_list = [val[0] for val in counter.items() if val[1]>=min_occ]
 
-                new_ngram_list.append(key)
-               
     new_tokens = range(max_token+1, len(new_ngram_list)+max_token+1)
     ngram_dic = dict(zip(new_ngram_list, new_tokens))
     
     return ngram_dic
-    
         
-def add_ngrams(train_tweets, test_tweets, max_token, ngram_range=2, min_occ=0, max_occ=None, n_first=None):
+def add_ngrams(tweet_list, ngram_dic, ngram_range=2):
     '''
     appends a token of the ngrams in the tweet. Tokens that are appended can be
     restricted in function of number of occurence.
     IN: see create_ngram_dic
     OUT: a list of list of tokens for each tweet with ngram tokens included
     '''
-    ngram_dic = create_ngram_dic(train_tweets, max_token, ngram_range=ngram_range, min_occ=min_occ, max_occ=max_occ, n_first=n_first)
     
     new_train_tweets = []
-    new_test_tweets = []
-    
-    for tweet in train_tweets:
+
+    for tweet in tweet_list:
         ngram_list = []
         new_tweet = tweet
         for i in range(2, ngram_range + 1):
-            ngram_list.append(ngrams(tweet, i))
-            
+            for n in ngrams(tweet, i):
+                ngram_list.append(n)
         ngram_set = set(ngram_list)
         
         for ngram in ngram_set:
@@ -121,22 +118,7 @@ def add_ngrams(train_tweets, test_tweets, max_token, ngram_range=2, min_occ=0, m
                 continue
         new_train_tweets.append(new_tweet)
         
-    for tweet in test_tweets:
-        ngram_list = []
-        new_tweet = tweet
-        for i in range(2, ngram_range + 1):
-            ngram_list.append(ngrams(tweet, i))
-            
-        ngram_set = set(ngram_list)
-        
-        for ngram in ngram_set:
-            try:
-                new_tweet.append(ngram_dic[ngram])
-            except KeyError:
-                continue
-        new_test_tweets.append(new_tweet)
-        
-    return new_train_tweets,   new_test_tweets
+    return new_train_tweets
 
 
 def load_embedding_matrix(filepath, EMB_DIM, word_index):
@@ -169,24 +151,29 @@ def main():
     
     DATA_PATH = "../data"
     TWEET_PATH = os.path.join(DATA_PATH, "twitter-datasets")
-    FULL = False    
+    FULL = True    
     EMB_DIM = 200
-    NGRAM_RANGE = None
-    MAXLEN = 30
+    NGRAM_RANGE = 2
+    MAXLEN = 40
     
+    n_first_ngram = None
     
     train_tweets, test_tweets, labels = import_tweets(TWEET_PATH, FULL)
-    train_tweets, test_tweets, word_index = tokenize(train_tweets, test_tweets, max_word=20000)
-    
+    train_tweets, test_tweets, word_index = tokenize(train_tweets, test_tweets)
+    max_word = len(word_index.keys())
     
     if NGRAM_RANGE:
         
-        train_tweets_ngram, test_tweets_ngram = add_ngrams(train_tweets, test_tweets, len(word_index.keys()), ngram_range=NGRAM_RANGE)
+        ngram_dic = create_ngram_dic(train_tweets, max_word, n_first=n_first_ngram)
+        train_tweets_ngram = add_ngrams(train_tweets, ngram_dic, ngram_range=NGRAM_RANGE)
+        test_tweets_ngram = add_ngrams(test_tweets, ngram_dic, ngram_range=NGRAM_RANGE)
+        
         train_tweets_ngram = sequence.pad_sequences(train_tweets_ngram, maxlen=(MAXLEN*NGRAM_RANGE))
         test_tweets_ngram = sequence.pad_sequences(test_tweets_ngram, maxlen=(MAXLEN*NGRAM_RANGE))
         
-        cPickle.dump([train_tweets_ngram, labels, test_tweets_ngram, len(word_index.keys())], 
-                      open(os.path.join(DATA_PATH, 'train_test_{}_gram.pkl').format(NGRAM_RANGE), 'wb'))
+        
+        cPickle.dump([train_tweets_ngram, labels, test_tweets_ngram, max_word+len(ngram_dic)], 
+                      open(os.path.join(DATA_PATH, 'for_graph_bigram.pkl').format(NGRAM_RANGE), 'wb'))
         
     else:
         
@@ -195,7 +182,7 @@ def main():
         embedding_matrix = load_embedding_matrix(DATA_PATH, EMB_DIM, word_index)
     
         cPickle.dump([train_tweets, labels, test_tweets, len(word_index.keys()), embedding_matrix],
-                      open(os.path.join(DATA_PATH, 'train_test_{}embedding.pkl'.format(EMB_DIM)), 'wb'))
+                      open(os.path.join(DATA_PATH, 'for_graph_1gram.pkl'), 'wb'))
 
 if __name__ == '__main__':
     main()
